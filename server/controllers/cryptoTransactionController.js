@@ -75,7 +75,7 @@ const fetchTransactions = async (req, res) => {
         }));
 
         // Store in MongoDB using insertMany
-        // await CryptoTransactionSchema.insertMany(transactions, { ordered: false });
+        await CryptoTransactionSchema.insertMany(transactions, { ordered: false });
 
         res.json({
             message: 'Transactions retrieved and stored successfully',
