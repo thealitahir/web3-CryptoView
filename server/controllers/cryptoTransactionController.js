@@ -1,15 +1,26 @@
 require('dotenv').config();
 const axios = require('axios');
+const Joi = require('joi');
+
 const CryptoTransactionSchema = require("../models/cryptoTransactions");
+
+
+const validateInput = (data) => {
+    const schema = Joi.object({
+        address: Joi.string().required().regex(/^0x[a-fA-F0-9]{40}$/).message('Invalid Ethereum address'),
+        startDate: Joi.date().allow(null, ''),
+        endDate: Joi.date().allow(null, '').greater(Joi.ref('startDate')).message('End date must be greater than start date')
+    });
+    return schema.validate(data);
+};
 
 const fetchTransactions = async (req, res) => {
     const { address, startDate, endDate } = req.body;
 
     try {
         // Validate Ethereum address
-        if (!address) {
-            return res.status(400).json({ error: 'Invalid Ethereum address' });
-        }
+        const { error } = validateInput({ address, startDate, endDate });
+        if (error) return res.status(400).json({ error: error.message });
 
         // Convert dates to UNIX timestamps for Etherscan
         let startTimestamp = 0;
@@ -64,7 +75,7 @@ const fetchTransactions = async (req, res) => {
         }));
 
         // Store in MongoDB using insertMany
-        await CryptoTransactionSchema.insertMany(transactions, { ordered: false });
+        // await CryptoTransactionSchema.insertMany(transactions, { ordered: false });
 
         res.json({
             message: 'Transactions retrieved and stored successfully',
